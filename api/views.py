@@ -32,7 +32,7 @@ def login_view(request):
         if username_exists:
             user = authenticate(request, username=username_exists.username, password=password)
             data['flash'] = True if user else False
-            data['message'] = 'Successful' if user else 'Unsuccessful'
+            data['message'] = 'Successful' if user else 'Password Incorrect'
             data['data']['username'] = user.username if user else None
             data['data']['user_id'] = user.id if user else None
         return Response(data)
