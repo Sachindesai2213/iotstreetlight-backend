@@ -107,25 +107,28 @@ def meters_view(request):
             created_by_id = user_id
         )
         meter.save()
-        parameters = json.loads(request.data['parameters'])
-        for parameter in parameters:
-            meter_parameter = MetersThreshold(
-                meter = meter,
-                parameter_name = parameter['parameter_name'],
-                field_name = parameter['field_name'],
-                unit = parameter['unit'],
-                min_thr = parameter['min_thr'],
-                max_thr = parameter['max_thr'],
-                notify = parameter['notify'],
-                created_by_id = user_id
-            )
-            meter_parameter.save()
-        return Response()
-    elif request.method == 'GET':
-        user_id = request.query_params['user_id']
-        meters = list(Meter.objects.filter(created_by_id=user_id).values())
+        meters = list(Meter.objects.filter(created_by_id=user_id).values('meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
         for meter in meters:
             meter['parameters'] = list(MetersThreshold.objects.filter(meter_id=meter['id']).values())
+            meter['on_time'] = str(meter['on_time'])
+            meter['off_time'] = str(meter['off_time'])
+            meter['is_on'] = 'Yes' if meter['is_on'] else 'No'
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'meters': meters
+            }
+        }
+        return Response(data)
+    elif request.method == 'GET':
+        user_id = request.query_params['user_id']
+        meters = list(Meter.objects.filter(created_by_id=user_id).values('meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
+        for meter in meters:
+            meter['parameters'] = list(MetersThreshold.objects.filter(meter_id=meter['id']).values())
+            meter['on_time'] = str(meter['on_time'])
+            meter['off_time'] = str(meter['off_time'])
+            meter['is_on'] = 'Yes' if meter['is_on'] else 'No'
         data = {
             'flash': True,
             'message': 'Successful',
