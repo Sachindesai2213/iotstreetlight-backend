@@ -74,7 +74,7 @@ def signup_view(request):
         return Response(data)
 
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 @csrf_exempt
 def meters_view(request):
     if request.method == 'POST':
