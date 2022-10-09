@@ -39,6 +39,7 @@ def login_view(request):
 
 
 @api_view(['POST'])
+@csrf_exempt
 def signup_view(request):
     if request.method == 'POST':
         username = request.data['username']
@@ -72,6 +73,7 @@ def signup_view(request):
 
 
 @api_view(['POST'])
+@csrf_exempt
 def meters_view(request):
     if request.method == 'POST':
         meter_name = request.data['meter_name']
