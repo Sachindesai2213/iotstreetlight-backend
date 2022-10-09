@@ -69,6 +69,8 @@ def signup_view(request):
             user_data.save()
             data['flash'] = True
             data['message'] = 'Successful'
+            data['data']['user_id'] = user.id
+            data['data']['username'] = user.username
         return Response(data)
 
 
