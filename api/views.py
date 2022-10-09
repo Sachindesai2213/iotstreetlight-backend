@@ -107,7 +107,7 @@ def meters_view(request):
             created_by_id = user_id
         )
         meter.save()
-        meters = list(Meter.objects.filter(created_by_id=user_id).values('meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
+        meters = list(Meter.objects.filter(created_by_id=user_id).values('id', 'meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
         for meter in meters:
             meter['parameters'] = list(MetersThreshold.objects.filter(meter_id=meter['id']).values())
             meter['on_time'] = str(meter['on_time'])
@@ -123,7 +123,7 @@ def meters_view(request):
         return Response(data)
     elif request.method == 'GET':
         user_id = request.query_params['user_id']
-        meters = list(Meter.objects.filter(created_by_id=user_id).values('meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
+        meters = list(Meter.objects.filter(created_by_id=user_id).values('id', 'meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
         for meter in meters:
             meter['parameters'] = list(MetersThreshold.objects.filter(meter_id=meter['id']).values())
             meter['on_time'] = str(meter['on_time'])
