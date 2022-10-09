@@ -9,3 +9,5 @@ pytz==2022.4
 sqlparse==0.4.3
 tzdata==2022.4
 zipp==3.8.1
+toml==0.10.2
+whitenoise==5.3.0
