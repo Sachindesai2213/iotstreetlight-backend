@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from .models import *
+from .methods import meters_data
 import json
 
 # Create your views here.
@@ -107,12 +108,7 @@ def meters_view(request):
             created_by_id = user_id
         )
         meter.save()
-        meters = list(Meter.objects.filter(created_by_id=user_id).values('id', 'meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
-        for meter in meters:
-            meter['parameters'] = list(MetersThreshold.objects.filter(meter_id=meter['id']).values())
-            meter['on_time'] = str(meter['on_time'])
-            meter['off_time'] = str(meter['off_time'])
-            meter['is_on'] = 'Yes' if meter['is_on'] else 'No'
+        meters = meters_data(user_id)
         data = {
             'flash': True,
             'message': 'Successful',
@@ -123,17 +119,43 @@ def meters_view(request):
         return Response(data)
     elif request.method == 'GET':
         user_id = request.query_params['user_id']
-        meters = list(Meter.objects.filter(created_by_id=user_id).values('id', 'meter_name', 'poles_r', 'poles_y', 'poles_b', 'group', 'period_type', 'lat', 'lon', 'sunrise_offset', 'sunset_offset', 'on_time', 'off_time', 'is_on'))
-        for meter in meters:
-            meter['parameters'] = list(MetersThreshold.objects.filter(meter_id=meter['id']).values())
-            meter['on_time'] = str(meter['on_time'])
-            meter['off_time'] = str(meter['off_time'])
-            meter['is_on'] = 'Yes' if meter['is_on'] else 'No'
+        meters = meters_data(user_id)
         data = {
             'flash': True,
             'message': 'Successful',
             'data': {
                 'meters': meters
+            }
+        }  
+        return Response(data)
+
+
+@api_view(['POST'])
+@csrf_exempt
+def meter_parameters_view(request):
+    if request.method == 'POST':
+        meter_id = request.data['meter_id']
+        parameter_name = request.data['parameter_name']
+        field_name = request.data['field_name']
+        min_thr = request.data['min_thr']
+        max_thr = request.data['max_thr']
+        user_id = request.data['user_id']
+        notify = request.data['notify']
+        meter_parameter = MetersThreshold(
+            meter_id = meter_id,
+            parameter_name = parameter_name,
+            field_name = field_name,
+            min_thr = min_thr,
+            max_thr = max_thr,
+            notify = True if notify == 'Yes' else False,
+            created_by_id = user_id
+        )
+        meter_parameter.save()
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'meter_parameter': meter_parameter
             }
         }  
         return Response(data)
