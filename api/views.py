@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from .models import *
-from .methods import meters_data
+from .methods import log_activity, meters_data
 import json
 
 # Create your views here.
@@ -36,6 +36,10 @@ def login_view(request):
             data['message'] = 'Successful' if user else 'Password Incorrect'
             data['data']['username'] = user.username if user else None
             data['data']['user_id'] = user.id if user else None
+        if data['data']['user_id']:
+            log_activity(user.id, 'Login Successful')
+        else:
+            log_activity(user.id, 'Login Unsuccessful - ' + data['message'])
         return Response(data)
 
 
@@ -72,6 +76,7 @@ def signup_view(request):
             data['message'] = 'Successful'
             data['data']['user_id'] = user.id
             data['data']['username'] = user.username
+            log_activity(user.id, 'Signup Successful')
         return Response(data)
 
 
@@ -108,6 +113,7 @@ def meters_view(request):
             created_by_id = user_id
         )
         meter.save()
+        log_activity(user_id, 'Added Meter ID#' + str(meter.id))
         meters = meters_data(user_id)
         data = {
             'flash': True,
@@ -151,11 +157,29 @@ def meter_parameters_view(request):
             created_by_id = user_id
         )
         meter_parameter.save()
+        log_activity(user_id, 'Added Meter Parameter ID#' + str(meter_parameter.id))
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {}
+        }  
+        return Response(data)
+
+
+@api_view(['GET'])
+@csrf_exempt
+def activities_view(request):
+    if request.method == 'GET':
+        activities = list(ActivityLog.objects.filter(user_id=2).values('user_id', 'user__first_name', 'user__last_name', 'type', 'timestamp', 'seen'))
+        for activity in activities:
+            activity['timestamp'] = activity['timestamp'].strftime('%d-%m-%Y %H-%M-%S')
+            activity['seen'] = 'Yes' if activity['seen'] else 'No'
+            activity['name'] = activity['user__first_name'] + ' ' + activity['user__last_name']
         data = {
             'flash': True,
             'message': 'Successful',
             'data': {
-                'meter_parameter': meter_parameter
+                'activities': activities
             }
-        }  
+        }
         return Response(data)
