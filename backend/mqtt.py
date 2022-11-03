@@ -8,6 +8,11 @@ from api.models import MeterData
 import paho.mqtt.client as mqtt
 import ast
 
+import environ
+# Initialise environment variables
+env = environ.Env()
+environ.Env.read_env()
+
 def on_connect(client,userdata, flags, rc):
     print('Connected' + str(rc))
     client.subscribe('sachin3913/feeds/python')
@@ -35,7 +40,7 @@ def on_message(client, userdata, msg):
     print('HI')
 
 client = mqtt.Client()
-client.username_pw_set(username='sachin3913', password='aio_fZRv57O3pEo4syASwo1cak7b3FoB')
+client.username_pw_set(username='sachin3913', password=env('ADAFRUIT_KEY'))
 client.on_connect = on_connect
 client.on_message = on_message
 
