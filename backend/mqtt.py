@@ -35,7 +35,7 @@ def on_message(client, userdata, msg):
     print('HI')
 
 client = mqtt.Client()
-client.username_pw_set(username='sachin3913', password='aio_ZBiF663ypMIa4GaCNiDeUWH7MMT2')
+client.username_pw_set(username='sachin3913', password='aio_fZRv57O3pEo4syASwo1cak7b3FoB')
 client.on_connect = on_connect
 client.on_message = on_message
 
