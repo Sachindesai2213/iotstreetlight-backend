@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from .models import *
 from .methods import log_activity, meters_data
+from datetime import datetime
 import json
 
 # Create your views here.
@@ -170,9 +171,10 @@ def meter_parameters_view(request):
 @csrf_exempt
 def activities_view(request):
     if request.method == 'GET':
-        activities = list(ActivityLog.objects.filter(user_id=2).values('user_id', 'user__first_name', 'user__last_name', 'type', 'timestamp', 'seen'))
+        user_id = request.query_params['user_id']
+        activities = list(ActivityLog.objects.filter(user_id=user_id).values('user_id', 'user__first_name', 'user__last_name', 'type', 'timestamp', 'seen'))
         for activity in activities:
-            activity['timestamp'] = activity['timestamp'].strftime('%d-%m-%Y %H-%M-%S')
+            activity['timestamp'] = activity['timestamp'].strftime('%d-%m-%Y %H:%M:%S')
             activity['seen'] = 'Yes' if activity['seen'] else 'No'
             activity['name'] = activity['user__first_name'] + ' ' + activity['user__last_name']
         data = {
@@ -180,6 +182,26 @@ def activities_view(request):
             'message': 'Successful',
             'data': {
                 'activities': activities
+            }
+        }
+        return Response(data)
+
+
+@api_view(['GET'])
+@csrf_exempt
+def analytics_view(request):
+    if request.method == 'GET':
+        user_id = request.query_params['user_id']
+        start_date = datetime.strptime(request.query_params['start_date'], '%Y-%m-%d').date()
+        end_date = datetime.strptime(request.query_params['end_date'], '%Y-%m-%d').date()
+        analytics = list(MeterData.objects.filter(inserted_on__date__range=(start_date, end_date), meter__created_by_id=user_id).values('meter_id', 'meter__meter_name', 'v_r', 'v_y', 'v_b', 'c_r', 'c_y', 'c_b', 'p_r', 'p_y', 'p_b', 'pf', 'kvar', 'freq', 'kwh', 'kvah', 'inserted_on')) 
+        for analytic in analytics:
+            analytic['inserted_on'] = analytic['inserted_on'].strftime('%d-%m-%Y %H:%M:%S')
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'analytics': analytics
             }
         }
         return Response(data)
