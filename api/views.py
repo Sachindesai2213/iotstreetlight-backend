@@ -189,19 +189,19 @@ def activities_view(request):
 
 @api_view(['GET'])
 @csrf_exempt
-def analytics_view(request):
+def reports_view(request):
     if request.method == 'GET':
         user_id = request.query_params['user_id']
         start_date = datetime.strptime(request.query_params['start_date'], '%Y-%m-%d').date()
         end_date = datetime.strptime(request.query_params['end_date'], '%Y-%m-%d').date()
-        analytics = list(MeterData.objects.filter(inserted_on__date__range=(start_date, end_date), meter__created_by_id=user_id).values('meter_id', 'meter__meter_name', 'v_r', 'v_y', 'v_b', 'c_r', 'c_y', 'c_b', 'p_r', 'p_y', 'p_b', 'pf', 'kvar', 'freq', 'kwh', 'kvah', 'inserted_on')) 
-        for analytic in analytics:
-            analytic['inserted_on'] = analytic['inserted_on'].strftime('%d-%m-%Y %H:%M:%S')
+        reports = list(MeterData.objects.filter(inserted_on__date__range=(start_date, end_date), meter__created_by_id=user_id).values('meter_id', 'meter__meter_name', 'v_r', 'v_y', 'v_b', 'c_r', 'c_y', 'c_b', 'p_r', 'p_y', 'p_b', 'pf', 'kvar', 'freq', 'kwh', 'kvah', 'inserted_on')) 
+        for report in reports:
+            report['inserted_on'] = report['inserted_on'].strftime('%d-%m-%Y %H:%M:%S')
         data = {
             'flash': True,
             'message': 'Successful',
             'data': {
-                'analytics': analytics
+                'reports': reports
             }
         }
         return Response(data)
