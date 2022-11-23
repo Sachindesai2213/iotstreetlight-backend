@@ -189,7 +189,7 @@ def activities_view(request):
 
 @api_view(['GET'])
 @csrf_exempt
-def analytics_view(request):
+def reports_view(request):
     if request.method == 'GET':
         user_id = request.query_params['user_id']
         start_date = datetime.strptime(request.query_params['start_date'], '%Y-%m-%d').date()

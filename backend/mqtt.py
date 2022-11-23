@@ -8,7 +8,7 @@ from api.models import MeterData
 import paho.mqtt.client as mqtt
 import ast
 
-def on_connect(client,userdata, flags, rc):
+def on_connect(client, userdata, flags, rc):
     print('Connected' + str(rc))
     client.subscribe('sachin3913/feeds/python')
 
