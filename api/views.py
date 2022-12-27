@@ -3,10 +3,10 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q
+from django.db.models import Q, Avg
 from .models import *
 from .methods import log_activity, meters_data
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 # Create your views here.
@@ -202,6 +202,37 @@ def reports_view(request):
             'message': 'Successful',
             'data': {
                 'reports': reports
+            }
+        }
+        return Response(data)
+
+
+@api_view(['GET'])
+@csrf_exempt
+def hourly_report_view(request):
+    if request.method == 'GET':
+        user_id = request.query_params['user_id']
+        parameter = request.query_params['parameter']
+        date = datetime.strptime(request.query_params['date'], '%Y-%m-%d')
+        start_datetime = date.replace(hour=0, minute=0, second=1)
+        end_datetime = date.replace(hour=1, minute=0, second=0)
+        hours = []
+        report_data = []
+        while date.date() == start_datetime.date():
+            parameter_data = MeterData.objects.filter(inserted_on__range=(start_datetime, end_datetime), meter__created_by_id=user_id).aggregate(Avg(parameter))
+            parameter_data = parameter_data[parameter + '__avg'] if parameter_data[parameter + '__avg'] else 0
+            hours.append(str(start_datetime.hour))
+            report_data.append(parameter_data)
+            start_datetime += timedelta(hours=1)
+            end_datetime += timedelta(hours=1)
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'labels': hours,
+                'datasets': [
+                    {'label': 'Data', 'data': report_data}
+                ],
             }
         }
         return Response(data)
