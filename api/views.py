@@ -236,3 +236,61 @@ def hourly_report_view(request):
             }
         }
         return Response(data)
+
+
+@api_view(['GET'])
+@csrf_exempt
+def daily_report_view(request):
+    if request.method == 'GET':
+        user_id = request.query_params['user_id']
+        parameter = request.query_params['parameter']
+        start_date = datetime.strptime(request.query_params['month'] + '-01', '%Y-%m-%d').date()
+        end_date = start_date
+        days = []
+        report_data = []
+        while start_date.month == end_date.month:
+            parameter_data = MeterData.objects.filter(inserted_on__date=end_date, meter__created_by_id=user_id).aggregate(Avg(parameter))
+            parameter_data = parameter_data[parameter + '__avg'] if parameter_data[parameter + '__avg'] else 0
+            days.append(str(end_date.day))
+            report_data.append(parameter_data)
+            end_date += timedelta(days=1)
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'labels': days,
+                'datasets': [
+                    {'label': 'Data', 'data': report_data}
+                ],
+            }
+        }
+        return Response(data)
+
+
+@api_view(['GET'])
+@csrf_exempt
+def monthly_report_view(request):
+    if request.method == 'GET':
+        user_id = request.query_params['user_id']
+        parameter = request.query_params['parameter']
+        start_date = datetime.strptime(request.query_params['year'] + '-01-01', '%Y-%m-%d').date()
+        end_date = start_date
+        months = []
+        report_data = []
+        while start_date.year == end_date.year:
+            parameter_data = MeterData.objects.filter(inserted_on__month=end_date.month, inserted_on__year=end_date.year, meter__created_by_id=user_id).aggregate(Avg(parameter))
+            parameter_data = parameter_data[parameter + '__avg'] if parameter_data[parameter + '__avg'] else 0
+            months.append(str(end_date.month))
+            report_data.append(parameter_data)
+            end_date += timedelta(days=31)
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'labels': months,
+                'datasets': [
+                    {'label': 'Data', 'data': report_data}
+                ],
+            }
+        }
+        return Response(data)
