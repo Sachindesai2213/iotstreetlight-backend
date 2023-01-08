@@ -11,12 +11,6 @@ import json
 
 # Create your views here.
 @api_view(['POST'])
-def user_view(request):
-    if request.method == 'POST':
-        return Response()
-
-
-@api_view(['POST'])
 @csrf_exempt
 def login_view(request):
     if request.method == 'POST':
@@ -41,6 +35,99 @@ def login_view(request):
             log_activity(user.id, 'Login Successful')
         else:
             log_activity(user.id, 'Login Unsuccessful - ' + data['message'])
+        return Response(data)
+
+
+@api_view(['GET', 'POST'])
+def profile_view(request):
+    if request.method == 'GET':
+        user_id = request.query_params['user_id']
+        user = User.objects.get(id=user_id)
+        user_info = UserInfo.objects.get(id=user_id)
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'contact_no': user_info.contact
+            }
+        }
+        return Response(data)
+    elif request.method == 'POST':
+        user_id = request.data['user_id']
+        user = User.objects.get(id=user_id)
+        user.first_name = request.data['first_name']
+        user.last_name = request.data['last_name']
+        user.email = request.data['email']
+        user.save(update_fields=['first_name', 'last_name', 'email'])
+        user_info = UserInfo.objects.get(id=user_id)
+        user_info.contact = request.data['contact']
+        user_info.save(update_fields=['contact'])
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'contact_no': user_info.contact
+            }
+        }
+        return Response(data)
+
+
+@api_view(['GET'])
+@csrf_exempt
+def dashboard_data_view(request):
+    if request.method == 'GET':
+        user_id = request.query_params['user_id']
+        current_date = datetime.now().date()
+        meters = Meter.objects.filter(created_by_id=user_id).count()
+        faults = Faults.objects.filter(meter__created_by_id=user_id).count()
+        power_consumption_today = MeterData.objects.filter(inserted_on__date=current_date, meter__created_by_id=user_id).aggregate(Sum('kwh'))
+        power_consumption_current_month = MeterData.objects.filter(inserted_on__month=current_date.month, inserted_on__year=current_date.year, meter__created_by_id=user_id).aggregate(Sum('kwh'))
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': [
+                {
+                    'title': "POWER - TODAY",
+                    'value': power_consumption_today['kwh__sum'] if power_consumption_today['kwh__sum'] else 'N/A',
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "usage",
+                    'link': "/reports"
+                },
+                {
+                    'title': "POWER - CURRENT MONTH",
+                    'value': power_consumption_current_month['kwh__sum'] if power_consumption_current_month['kwh__sum'] else 'N/A',
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "power",
+                    'link': "/reports"
+                },
+                {
+                    'title': 'METERS',
+                    'value': meters,
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "meters",
+                    'link': "/reports"
+                },
+                {
+                    'title': 'FAULTS',
+                    'value': faults,
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "faults",
+                    'link': "/faults"
+                },
+            ]
+        }
         return Response(data)
 
 
