@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg, Sum
 from .models import *
 from .methods import log_activity, meters_data
 from datetime import datetime, timedelta
@@ -212,27 +212,40 @@ def reports_view(request):
 def hourly_report_view(request):
     if request.method == 'GET':
         user_id = request.query_params['user_id']
-        parameter = request.query_params['parameter']
+        parameter_1 = request.query_params['parameter_1']
+        parameter_2 = request.query_params['parameter_2']
+        type = request.query_params['type']
         date = datetime.strptime(request.query_params['date'], '%Y-%m-%d')
         start_datetime = date.replace(hour=0, minute=0, second=1)
         end_datetime = date.replace(hour=1, minute=0, second=0)
         hours = []
-        report_data = []
+        parameter_1_report_data = []
+        parameter_2_report_data = []
         while date.date() == start_datetime.date():
-            parameter_data = MeterData.objects.filter(inserted_on__range=(start_datetime, end_datetime), meter__created_by_id=user_id).aggregate(Avg(parameter))
-            parameter_data = parameter_data[parameter + '__avg'] if parameter_data[parameter + '__avg'] else 0
             hours.append(str(start_datetime.hour))
-            report_data.append(parameter_data)
+            parameter_data = MeterData.objects.filter(inserted_on__range=(start_datetime, end_datetime), meter__created_by_id=user_id)
+            if type == 'avg':
+                parameter_data = parameter_data.aggregate(Avg(parameter_1)) if not parameter_2 else parameter_data.aggregate(Avg(parameter_1), Avg(parameter_2))
+            elif type == 'sum':
+                parameter_data = parameter_data.aggregate(Sum(parameter_1)) if not parameter_2 else parameter_data.aggregate(Sum(parameter_1), Sum(parameter_2))
+            parameter_1_data = parameter_data[parameter_1 + '__' + type] if parameter_data[parameter_1 + '__' + type] else 0
+            parameter_1_report_data.append(parameter_1_data)
+            if parameter_2:
+                parameter_2_data = parameter_data[parameter_2 + '__' + type] if parameter_data[parameter_2 + '__' + type] else 0
+                parameter_2_report_data.append(parameter_2_data)
             start_datetime += timedelta(hours=1)
             end_datetime += timedelta(hours=1)
+        datasets = [
+            {'label': parameter_1, 'data': parameter_1_report_data}
+        ]
+        if parameter_2_report_data:
+            datasets.append({'label': parameter_2, 'data': parameter_2_report_data})
         data = {
             'flash': True,
             'message': 'Successful',
             'data': {
                 'labels': hours,
-                'datasets': [
-                    {'label': 'Data', 'data': report_data}
-                ],
+                'datasets': datasets,
             }
         }
         return Response(data)
@@ -243,25 +256,38 @@ def hourly_report_view(request):
 def daily_report_view(request):
     if request.method == 'GET':
         user_id = request.query_params['user_id']
-        parameter = request.query_params['parameter']
+        parameter_1 = request.query_params['parameter_1']
+        parameter_2 = request.query_params['parameter_2']
+        type = request.query_params['type']
         start_date = datetime.strptime(request.query_params['month'] + '-01', '%Y-%m-%d').date()
         end_date = start_date
         days = []
-        report_data = []
+        parameter_1_report_data = []
+        parameter_2_report_data = []
         while start_date.month == end_date.month:
-            parameter_data = MeterData.objects.filter(inserted_on__date=end_date, meter__created_by_id=user_id).aggregate(Avg(parameter))
-            parameter_data = parameter_data[parameter + '__avg'] if parameter_data[parameter + '__avg'] else 0
             days.append(str(end_date.day))
-            report_data.append(parameter_data)
+            parameter_data = MeterData.objects.filter(inserted_on__date=end_date, meter__created_by_id=user_id)
+            if type == 'avg':
+                parameter_data = parameter_data.aggregate(Avg(parameter_1)) if not parameter_2 else parameter_data.aggregate(Avg(parameter_1), Avg(parameter_2))
+            elif type == 'sum':
+                parameter_data = parameter_data.aggregate(Sum(parameter_1)) if not parameter_2 else parameter_data.aggregate(Sum(parameter_1), Sum(parameter_2))
+            parameter_1_data = parameter_data[parameter_1 + '__' + type] if parameter_data[parameter_1 + '__' + type] else 0
+            parameter_1_report_data.append(parameter_1_data)
+            if parameter_2:
+                parameter_2_data = parameter_data[parameter_2 + '__' + type] if parameter_data[parameter_2 + '__' + type] else 0
+                parameter_2_report_data.append(parameter_2_data)
             end_date += timedelta(days=1)
+        datasets = [
+            {'label': parameter_1, 'data': parameter_1_report_data}
+        ]
+        if parameter_2_report_data:
+            datasets.append({'label': parameter_2, 'data': parameter_2_report_data})
         data = {
             'flash': True,
             'message': 'Successful',
             'data': {
                 'labels': days,
-                'datasets': [
-                    {'label': 'Data', 'data': report_data}
-                ],
+                'datasets': datasets,
             }
         }
         return Response(data)
@@ -272,25 +298,38 @@ def daily_report_view(request):
 def monthly_report_view(request):
     if request.method == 'GET':
         user_id = request.query_params['user_id']
-        parameter = request.query_params['parameter']
+        parameter_1 = request.query_params['parameter_1']
+        parameter_2 = request.query_params['parameter_2']
+        type = request.query_params['type']
         start_date = datetime.strptime(request.query_params['year'] + '-01-01', '%Y-%m-%d').date()
         end_date = start_date
         months = []
-        report_data = []
+        parameter_1_report_data = []
+        parameter_2_report_data = []
         while start_date.year == end_date.year:
-            parameter_data = MeterData.objects.filter(inserted_on__month=end_date.month, inserted_on__year=end_date.year, meter__created_by_id=user_id).aggregate(Avg(parameter))
-            parameter_data = parameter_data[parameter + '__avg'] if parameter_data[parameter + '__avg'] else 0
             months.append(str(end_date.month))
-            report_data.append(parameter_data)
+            parameter_data = MeterData.objects.filter(inserted_on__month=end_date.month, inserted_on__year=end_date.year, meter__created_by_id=user_id)
+            if type == 'avg':
+                parameter_data = parameter_data.aggregate(Avg(parameter_1)) if not parameter_2 else parameter_data.aggregate(Avg(parameter_1), Avg(parameter_2))
+            elif type == 'sum':
+                parameter_data = parameter_data.aggregate(Sum(parameter_1)) if not parameter_2 else parameter_data.aggregate(Sum(parameter_1), Sum(parameter_2))
+            parameter_1_data = parameter_data[parameter_1 + '__' + type] if parameter_data[parameter_1 + '__' + type] else 0
+            parameter_1_report_data.append(parameter_1_data)
+            if parameter_2:
+                parameter_2_data = parameter_data[parameter_2 + '__' + type] if parameter_data[parameter_2 + '__' + type] else 0
+                parameter_2_report_data.append(parameter_2_data)
             end_date += timedelta(days=31)
+        datasets = [
+            {'label': parameter_1, 'data': parameter_1_report_data}
+        ]
+        if parameter_2_report_data:
+            datasets.append({'label': parameter_2, 'data': parameter_2_report_data})
         data = {
             'flash': True,
             'message': 'Successful',
             'data': {
                 'labels': months,
-                'datasets': [
-                    {'label': 'Data', 'data': report_data}
-                ],
+                'datasets': datasets,
             }
         }
         return Response(data)
