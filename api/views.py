@@ -420,3 +420,25 @@ def monthly_report_view(request):
             }
         }
         return Response(data)
+
+
+@api_view(['GET'])
+@csrf_exempt
+def faults_view(request):
+    if request.method == 'GET':
+        user_id = request.query_params['user_id']
+        start_date = datetime.strptime(request.query_params['start_date'], '%Y-%m-%d').date()
+        end_date = datetime.strptime(request.query_params['end_date'], '%Y-%m-%d').date()
+        faults = list(Faults.objects.filter(created_on__date__range=(start_date, end_date), meter__created_by_id=user_id).values('meter__meter_name', 'fault_desc', 'fault_loc', 'r_status', 'created_on', 'seen_report'))
+        for fault in faults:
+            fault['created_on'] = fault['created_on'].strftime('%d-%m-%Y %H:%M:%S')
+            fault['r_status'] = 'Yes' if fault['r_status'] else 'No'
+            fault['seen_report'] = 'Seen' if fault['seen_report'] else 'Unseen'
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {
+                'faults': faults
+            }
+        }
+        return Response(data)

@@ -4,7 +4,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 import django
 django.setup()
 
-from api.models import MeterData
+from api.models import MeterData, MetersThreshold, Faults
 import paho.mqtt.client as mqtt
 import ast
 
@@ -32,6 +32,18 @@ def on_message(client, userdata, msg):
         kvah = message_object['kvah'],
     )
     meter_data.save()
+    parameters = ['v_r', 'v_y', 'v_b', 'c_r', 'c_y', 'c_b', 'p_r', 'p_y', 'p_b', 'pf', 'kvar', 'freq', 'kwh', 'kvah']
+    for parameter in parameters:
+        parameter_threshold = MetersThreshold.objects.filter(meter_id=message_object['meter_id'], field_name=parameter).last()
+        if parameter_threshold and (message_object[parameter] < parameter_threshold.min_thr or message_object[parameter] > parameter_threshold.max_thr):
+            fault_description = 'Below Min. Threshold' if message_object[parameter] < parameter_threshold.min_thr else 'Above Max. Threshold'
+            fault = Faults(
+                meter_id = message_object['meter_id'],
+                fault_desc = fault_description,
+                fault_loc = parameter_threshold.parameter_name,
+                created_by_id = 1
+            )
+            fault.save()
     print('HI')
 
 client = mqtt.Client()
