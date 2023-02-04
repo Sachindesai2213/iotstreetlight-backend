@@ -1,10 +1,11 @@
 from django.contrib import admin
-from .models import UserInfo, Meter, MeterData, MetersThreshold, Faults, ActivityLog
+from .models import UserInfo, Device, DeviceDataLog, DeviceData, DeviceParameter, Faults, ActivityLog
 
 # Register your models here.
 admin.site.register(UserInfo)
-admin.site.register(Meter)
-admin.site.register(MeterData)
-admin.site.register(MetersThreshold)
+admin.site.register(Device)
+admin.site.register(DeviceDataLog)
+admin.site.register(DeviceData)
+admin.site.register(DeviceParameter)
 admin.site.register(Faults)
 admin.site.register(ActivityLog)

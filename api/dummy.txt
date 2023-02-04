@@ -1,1 +1,1 @@
-{'meter_id': 1, 'v_r': 1.5, 'v_y': 1.5, 'v_b': 1.5, 'c_r': 10, 'c_y': 10, 'c_b': 10, 'p_r': 5, 'p_y': 5, 'p_b': 5, 'pf': 1, 'kvar': 1, 'freq': 1, 'kwh': 1, 'kvah': 1}
+{'device_id': 1, 'parameters': {'v': 12, 'i': 20}}
