@@ -3,11 +3,15 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q, Avg, Sum
+from django.db.models import F, Q, Avg, Sum
 from .models import *
 from .methods import log_activity, devices_data
 from datetime import datetime, timedelta
+import paho.mqtt.client as mqtt
 import json
+import os
+from backend.mqtt import on_publish, on_disconnect
+
 
 # Create your views here.
 @api_view(['POST'])
@@ -33,6 +37,9 @@ def login_view(request):
             data['data']['user_id'] = user.id if user else None
         if data['data']['user_id']:
             log_activity(user.id, 'Login Successful')
+            data['data']['devices'] = list(Device.objects.annotate(value=F('id')).filter(created_by_id=user.id).values('id', 'name', 'value'))
+            for device in data['data']['devices']:
+                device['parameters'] = list(DeviceParameter.objects.annotate(value=F('key')).filter(device_id=device['id']).values('id', 'name', 'value'))
         else:
             log_activity(user.id, 'Login Unsuccessful - ' + data['message'])
         return Response(data)
@@ -240,6 +247,48 @@ def device_parameters_view(request):
         )
         device_parameter.save()
         log_activity(user_id, 'Added Device Parameter ID#' + str(device_parameter.id))
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {}
+        }  
+        return Response(data)
+
+
+@api_view(['POST', 'PUT'])
+@csrf_exempt
+def device_configurations_view(request):
+    if request.method == 'POST':
+        device_id = request.data['device_id']
+        name = request.data['name']
+        key = request.data['key']
+        value = request.data['value']
+        user_id = request.data['user_id']
+        device_configuration = DeviceConfiguration(
+            device_id = device_id,
+            name = name,
+            key = key,
+            value = value,
+            created_by_id = user_id
+        )
+        device_configuration.save()
+        log_activity(user_id, 'Added Device Configuration ID#' + str(device_configuration.id))
+        data = {
+            'flash': True,
+            'message': 'Successful',
+            'data': {}
+        }  
+        return Response(data)
+    elif request.method == 'PUT':
+        configurations = list(DeviceConfiguration.objects.filter(device_id=request.data['id']).values('id', 'device_id', 'device__name', 'name', 'key', 'value'))
+        data = json.dumps(configurations)
+        client_push = mqtt.Client()
+        client_push.username_pw_set(username='sachin3913', password=os.environ.get('ADAFRUIT_KEY'))
+        client_push.on_publish = on_publish
+        client_push.on_disconnect = on_disconnect
+        client_push.connect("io.adafruit.com", 1883)
+        client_push.publish('sachin3913/feeds/python', data.encode('utf-8'), qos=0)
+        client_push.disconnect()
         data = {
             'flash': True,
             'message': 'Successful',

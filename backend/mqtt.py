@@ -14,33 +14,43 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe('sachin3913/feeds/python')
 
 
+def on_publish(client, userdata, rc):
+    print('Data Published')
+
+
+def on_disconnect(client, userdata, rc):
+    print('Disconnected')
+
+
 def on_message(client, userdata, msg):
     print(msg.payload.decode())
     message_object = ast.literal_eval(msg.payload.decode())
-    parameters = message_object['parameters']
-    device_id = message_object['device_id']
-    device_log = DeviceDataLog(
-        device_id=device_id
-    )
-    device_log.save()
-    for key, value in parameters.items():
-        parameter = DeviceParameter.objects.filter(device_id=device_id, key=key).last()
-        if parameter:
-            device_data = DeviceData(
-                parameter=parameter,
-                value=value,
-                log=device_log
-            )
-            device_data.save()
-            if (value < parameter.min_thr or value > parameter.max_thr):
-                fault_description = 'Below Min. Threshold' if value < parameter.min_thr else 'Above Max. Threshold'
-                fault = Faults(
-                    device_id=device_id,
-                    fault_desc=fault_description,
-                    fault_loc=parameter.name,
-                    created_by_id=1
+    receiver = message_object['receiver'] if 'receiver' in message_object and message_object['receiver'] else None
+    if receiver and receiver == 'server':
+        parameters = message_object['parameters']
+        device_id = message_object['device_id']
+        device_log = DeviceDataLog(
+            device_id=device_id
+        )
+        device_log.save()
+        for key, value in parameters.items():
+            parameter = DeviceParameter.objects.filter(device_id=device_id, key=key).last()
+            if parameter:
+                device_data = DeviceData(
+                    parameter=parameter,
+                    value=value,
+                    log=device_log
                 )
-                fault.save()
+                device_data.save()
+                if (value < parameter.min_thr or value > parameter.max_thr):
+                    fault_description = 'Below Min. Threshold' if value < parameter.min_thr else 'Above Max. Threshold'
+                    fault = Faults(
+                        device_id=device_id,
+                        fault_desc=fault_description,
+                        fault_loc=parameter.name,
+                        created_by_id=1
+                    )
+                    fault.save()
     print('HI')
 
 
@@ -49,5 +59,7 @@ client.username_pw_set(username='sachin3913',
                        password=os.environ.get('ADAFRUIT_KEY'))
 client.on_connect = on_connect
 client.on_message = on_message
+client.on_publish = on_publish
+client.on_disconnect = on_disconnect
 
 client.connect("io.adafruit.com", 1883, 60)

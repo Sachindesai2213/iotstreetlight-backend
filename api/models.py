@@ -17,15 +17,16 @@ class ActivityLog(models.Model):
 class Device(models.Model):
     name = models.CharField(max_length=50)
     group = models.CharField(max_length=50, null=True)
-    period_type = models.CharField(max_length=10, default='Fixed')
-    lat = models.FloatField(null=True)
-    lon = models.FloatField(null=True)
-    sunrise_offset = models.IntegerField(null=True)
-    sunset_offset = models.IntegerField(null=True)
-    on_time = models.TimeField(default='18:00:00')
-    off_time = models.TimeField(default='06:00:00')
     is_on = models.BooleanField(default=0)
-    is_change = models.BooleanField(default=0)
+    created_on = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+
+class DeviceConfiguration(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    key = models.CharField(max_length=20)
+    value = models.CharField(max_length=255)
     created_on = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
