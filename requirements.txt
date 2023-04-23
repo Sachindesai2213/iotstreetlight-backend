@@ -1,11 +1,12 @@
+adafruit-io
 autopep8
 django-cors-headers
 django-environ
 django-filter
-djangorestframework
+djangorestframework-simplejwt
+flake8
 gunicorn
 markdown
-paho-mqtt
 pip-chill
 pysqlite3
 whitenoise
