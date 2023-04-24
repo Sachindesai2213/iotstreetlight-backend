@@ -35,7 +35,6 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
 
 
 @api_view(['GET'])
-@csrf_exempt
 def dashboard_data_view(request):
     if request.method == 'GET':
         user_id = request.query_params['user_id']
@@ -57,47 +56,45 @@ def dashboard_data_view(request):
             parameter__name__contains='Power'
         ).aggregate(Sum('value'))
         power_consumption_current_month = DeviceData.objects.filter(
-            log__inserted_on__month=current_date.month, log__inserted_on__year=current_date.year, parameter__device__created_by_id=user_id, parameter__name__contains='Power').aggregate(Sum('value'))
+            log__inserted_on__month=current_date.month, log__inserted_on__year=current_date.year, parameter__device__created_by_id=user_id,
+            parameter__name__contains='Power'
+        ).aggregate(Sum('value'))
         data = {
-            'flash': True,
-            'message': 'Successful',
-            'data': {
-                'dashboard_data': [
-                    {
-                        'title': "POWER - TODAY",
-                        'value': power_consumption_today['value__sum'] if power_consumption_today['value__sum'] else 'N/A',
-                        'isIncreased': True,
-                        'percentage': 0,
-                        'icon': "usage",
-                        'link': "/reports"
-                    },
-                    {
-                        'title': "POWER - CURRENT MONTH",
-                        'value': power_consumption_current_month['value__sum'] if power_consumption_current_month['value__sum'] else 'N/A',
-                        'isIncreased': True,
-                        'percentage': 0,
-                        'icon': "power",
-                        'link': "/reports"
-                    },
-                    {
-                        'title': 'Devices',
-                        'value': device_count,
-                        'isIncreased': True,
-                        'percentage': 0,
-                        'icon': "meters",
-                        'link': "/devices"
-                    },
-                    {
-                        'title': 'FAULTS',
-                        'value': faults,
-                        'isIncreased': True,
-                        'percentage': 0,
-                        'icon': "faults",
-                        'link': "/faults"
-                    },
-                ],
-                'devices': devices
-            }
+            'dashboard_data': [
+                {
+                    'title': "POWER - TODAY",
+                    'value': power_consumption_today['value__sum'] if power_consumption_today['value__sum'] else 'N/A',
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "usage",
+                    'link': "/reports"
+                },
+                {
+                    'title': "POWER - CURRENT MONTH",
+                    'value': power_consumption_current_month['value__sum'] if power_consumption_current_month['value__sum'] else 'N/A',
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "power",
+                    'link': "/reports"
+                },
+                {
+                    'title': 'Devices',
+                    'value': device_count,
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "meters",
+                    'link': "/devices"
+                },
+                {
+                    'title': 'FAULTS',
+                    'value': faults,
+                    'isIncreased': True,
+                    'percentage': 0,
+                    'icon': "faults",
+                    'link': "/faults"
+                },
+            ],
+            'devices': devices
         }
         return Response(data)
 
@@ -207,12 +204,8 @@ def reports_view(request):
                 log[parameter['key']] = device_data[parameter['key']
                                                     ] if parameter['key'] in device_data else ''
         data = {
-            'flash': True,
-            'message': 'Successful',
-            'data': {
-                'reports': device_data_logs,
-                'parameters': parameters
-            }
+            'reports': device_data_logs,
+            'parameters': parameters
         }
         return Response(data)
 
@@ -262,13 +255,9 @@ def hourly_report_view(request):
         if parameter_2_report_data:
             datasets.append(
                 {'label': parameter_2, 'data': parameter_2_report_data})
-        data = {
-            'flash': True,
-            'message': 'Successful',
-            'data': {
-                'labels': hours,
-                'datasets': datasets,
-            }
+        data ={
+            'labels': hours,
+            'datasets': datasets,
         }
         return Response(data)
 
@@ -318,12 +307,8 @@ def daily_report_view(request):
             datasets.append(
                 {'label': parameter_2, 'data': parameter_2_report_data})
         data = {
-            'flash': True,
-            'message': 'Successful',
-            'data': {
-                'labels': days,
-                'datasets': datasets,
-            }
+            'labels': days,
+            'datasets': datasets,
         }
         return Response(data)
 
@@ -375,12 +360,8 @@ def monthly_report_view(request):
             datasets.append(
                 {'label': parameter_2, 'data': parameter_2_report_data})
         data = {
-            'flash': True,
-            'message': 'Successful',
-            'data': {
-                'labels': months,
-                'datasets': datasets,
-            }
+            'labels': months,
+            'datasets': datasets,
         }
         return Response(data)
 
