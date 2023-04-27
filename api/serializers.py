@@ -37,11 +37,11 @@ class DeviceParameterSerializer(serializers.ModelSerializer):
 
 
 class DeviceConfigurationSerializer(serializers.ModelSerializer):
-    device_name = serializers.CharField(source='device.name')
+    device_name = serializers.CharField(source='device.name', read_only=True)
 
     class Meta:
         model = DeviceConfiguration
-        fields = '__all__'
+        exclude = ['created_by']
 
 
 class FaultSerializer(serializers.ModelSerializer):

@@ -61,11 +61,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CSRF_TRUSTED_ORIGINS = ["https://iotstreetlight.primarybuilds.com"]
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://iotstreetlight.vercel.app",
     "https://io.adafruit.com",
+    "https://iotstreetlight.primarybuilds.com",
 ]
 
 ROOT_URLCONF = 'backend.urls'
